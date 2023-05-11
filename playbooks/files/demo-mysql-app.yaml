@@ -20,15 +20,14 @@ metadata:
     app: k8s-demo-app
     tier: mysql
 spec:
- #storageClassName: "csi-hostpath-delete-sc"
-  accessModes:
-    - ReadWriteOnce
+  # storageClassName: "csi-hostpath-delete-sc"
+  accessModes: ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
 ---
 ## Mysql app deployment
-apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: k8s-demo-app-mysql
@@ -49,22 +48,22 @@ spec:
         tier: mysql
     spec:
       containers:
-      - image: mysql:5.6
+        image: mysql:5.6
         name: mysql
         env:
-        - name: MYSQL_ROOT_PASSWORD
+          name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
               name: mysql-pass
               key: password
         ports:
-        - containerPort: 3306
+          containerPort: 3306
           name: mysql
         volumeMounts:
-        - name: mysql-persistent-storage
+          name: mysql-persistent-storage
           mountPath: /var/lib/mysql
       volumes:
-      - name: mysql-persistent-storage
+        name: mysql-persistent-storage
         persistentVolumeClaim:
           claimName: mysql-pv-claim
 ---
@@ -78,7 +77,7 @@ metadata:
     tier: mysql
 spec:
   ports:
-    - port: 3306
+    port: 3306
   selector:
     app: k8s-demo-app
     tier: mysql
@@ -104,11 +103,11 @@ spec:
         tier: frontend
     spec:
       containers:
-      - name: demoapp-frontend
+        name: demoapp-frontend
         image: docker.io/trilio/k8s-demo-app:v1
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 80
+          containerPort: 80
 ---
 ## Service for frontend
 apiVersion: v1
@@ -120,7 +119,7 @@ metadata:
     tier: frontend
 spec:
   ports:
-  - name: web
+    name: web
     port: 80
   selector:
     app: k8s-demo-app

@@ -133,4 +133,3 @@
 
 #  - debug:
 #      var: deployment_output.stdout_lines
-

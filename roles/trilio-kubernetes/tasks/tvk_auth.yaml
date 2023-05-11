@@ -11,4 +11,3 @@
 - name: Authenticate to Kubernetes
   ansible.builtin.include_tasks: "tvk_auth_{{ k8s_auth_type }}.yaml"
   tags: ['always']
-
