@@ -1,0 +1,47 @@
+# General
+.vagrant/
+configs/
+
+# Log files (if you are creating logs in debug mode, uncomment this)
+*.log
+
+*.cast
+
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+
+# Icon must end with two \r
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+license.*
+*.tgz
+
+*openrc*
+
+*.enc
+secret.yaml
+password_file
+
+overrides/
