@@ -1,0 +1,11 @@
+tvk_check: true
+tvk_smoketest: false
+tvk_create_target: false
+tvk_deploy_demo_app: false
+tvk_create_backupplan: false
+kubernetes_distro: kubernetes
+tvk_suggest_autoprotect: false
+tvk_backup_polling_retries: 10
+tvk_backup_polling_every_seconds: 60
+tvk_restore_polling_retries: 10
+tvk_restore_polling_every_seconds: 60

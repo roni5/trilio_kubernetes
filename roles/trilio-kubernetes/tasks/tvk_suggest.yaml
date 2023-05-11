@@ -1,0 +1,42 @@
+# Set of tasks that will check a Kubernetes cluster for
+# - Any NS with a PVC
+# - If tvk_autoprotect: true - create backupplan and
+# - perform backup of each NS
+# 
+# - So two modes of use:
+# - recommend (--tags "search" or "suggest") and auto protect (--tags "autoprotect")
+#
+# Authors: Kevin Jackson <kevin.jackson at trilio io>
+
+- name: Trilio for Kubernetes Auto Protect Routine
+  block:
+  - name: Checking Namespaces for PVCs
+    kubernetes.core.k8s_info:
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      kind: PersistentVolumeClaim
+      validate_certs: false
+    register: pvc_list
+
+  - name: Register Namespaces with PVCs
+    set_fact:
+      found_ns_list: "{{ pvc_list | json_query('resources[*].metadata.namespace')  }}"
+
+  - name: Remove excluded Namespaces from suggestion
+    set_fact:
+      recommended_ns_list: "{{ found_ns_list | difference(tvk_autoprotect_exclude) }}"
+
+  - name: Protect NS Listed
+    debug:
+      msg: "{{ recommended_ns_list }}"
+
+  tags: ['suggest', 'search', 'autoprotect', 'smoketest']
+
+- name: Calling backup plan creation task
+  ansible.builtin.include_tasks: tvk_create_backupplan_test.yaml
+  vars:
+    tvk_namespace: "{{ item }}"
+    tvk_suggest_autoprotect: true
+    tvk_backupplan_name: "{{ tvk_namespace }}-autoprotect"
+  with_items: "{{ recommended_ns_list }}"
+  when: tvk_autoprotect | bool
+  tags: ['autoprotect']

@@ -1,0 +1,7 @@
+
+tvk_backupplan_name: smoketest-app-backupplan
+tvk_backupplan_type: ns # ns|label
+tvk_backup_match_label: "app: k8s-demo-app" # ignored for ns backup type
+
+# Perform Restore (to new ns)
+tvk_restore_namespace: smoketest-restore

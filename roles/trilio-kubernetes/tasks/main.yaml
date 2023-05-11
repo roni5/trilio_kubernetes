@@ -1,0 +1,73 @@
+# - name: Trilio for Kubernetes Smoketest
+#  ansible.builtin.include_tasks: tvk_smoketest.yaml
+#  when: tvk_smoketest | bool
+#  tags: ['smoketest']
+
+- name: Authentication to Kubernetes
+  ansible.builtin.include_tasks: tvk_auth.yaml
+  when: tvk_auth | bool
+  tags: ['always', 'auth']
+
+- name: Basic Trilio for Kubernetes Checks
+  ansible.builtin.include_tasks: tvk_check.yaml
+  when: tvk_check | bool
+  tags: ['check']
+
+- name: Searching for Backup Recommendations
+  ansible.builtin.include_tasks: tvk_suggest.yaml
+  when: tvk_suggest | bool
+  tags: ['never', 'suggest', 'search', 'autoprotect']
+
+- name: Trilio for Kubernetes Create Namespace
+  ansible.builtin.include_tasks: tvk_create_ns.yaml
+  when: tvk_create_namespace | bool
+  tags: ['namespace', 'ns']
+
+- name: Trilio for Kubernetes Deploy App
+  ansible.builtin.include_tasks: tvk_deploy_app.yaml
+  when: tvk_deploy_demo_app | bool
+  tags: ['never', 'deploy_app']
+
+- name: Trilio for Kubernetes Create Target
+  ansible.builtin.include_tasks: tvk_create_target.yaml
+  when: tvk_create_target | bool
+  tags: ['target']
+
+- name: Trilio for Kubernetes Create Backup Plan
+  ansible.builtin.include_tasks: tvk_create_backupplan.yaml
+  when: tvk_create_backupplan | bool
+  tags: ['backupplan']
+
+- name: Trilio for Kubernetes Execute a Backup
+  ansible.builtin.include_tasks: tvk_create_backup.yaml
+  when: tvk_create_backup | bool
+  tags: ['backup']
+
+- name: Trilio for Kubernetes Perform Restore
+  ansible.builtin.include_tasks: tvk_create_restore.yaml
+  when: tvk_create_restore | bool
+  tags: ['never', 'restore']
+
+- name: Trilio for Kubernetes Execute a Migration
+  ansible.builtin.include_tasks: tvk_migration.yaml
+  when: tvk_migrate | bool
+  tags: ['migrate']
+
+- name: Trilio for Kubernetes Smoketest
+  ansible.builtin.include_tasks: tvk_smoketest.yaml
+  when: tvk_smoketest | bool
+  tags: ['never', 'smoketest']
+
+- name: Cleanup Trilio For Kubernetes
+  ansible.builtin.include_tasks: tvk_cleanup.yaml
+  when:
+  - tvk_cleanup | bool
+  - tvk_restore_namespace is defined
+  vars:
+    tvk_namespace: "{{ tvk_restore_namespace }}"
+  tags: ['never', 'cleanup']
+
+- name: Cleanup Trilio For Kubernetes
+  ansible.builtin.include_tasks: tvk_cleanup.yaml
+  when: tvk_cleanup | bool
+  tags: ['never', 'cleanup']

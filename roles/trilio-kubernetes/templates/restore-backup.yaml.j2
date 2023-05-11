@@ -1,0 +1,12 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  name: {{ tvk_backup_prefix }}-restore
+spec:
+  source:
+    type: Backup
+    backup:
+      name: {{ tvk_backup_prefix }}-{{ timestamp }}
+      namespace: {{ tvk_namespace }}
+    restoreNamespace: {{ tvk_restore_namespace }}
+    skipIfAlreadyExists: true

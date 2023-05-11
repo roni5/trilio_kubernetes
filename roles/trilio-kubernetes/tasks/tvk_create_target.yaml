@@ -1,0 +1,18 @@
+# Set of tasks for creating a Trilio for Kubernetes Target in a namespace
+# for storing backups
+#
+# Authors: Kevin Jackson <kevin.jackson at trilio io>
+
+- name: Create Namespace
+  ansible.builtin.include_tasks: tvk_create_ns.yaml
+  when: tvk_create_namespace | bool
+  tags: ['namespace', 'smoketest', 'target', 'migrate']
+
+- name: Create Secret for S3
+  ansible.builtin.include_tasks: "tvk_create_secret_{{ k8s_auth_type }}.yaml"
+  tags: ['secret', 'smoketest']
+
+- name: Create Target
+  ansible.builtin.include_tasks: "tvk_create_target_{{ k8s_auth_type }}.yaml"
+  when: tvk_create_target | bool
+  tags: ['target', 'smoketest']

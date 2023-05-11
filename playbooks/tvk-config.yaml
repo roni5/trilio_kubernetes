@@ -1,0 +1,85 @@
+# Trilio For Kubernetes
+# Authors: Kevin Jackson <kevin.jackson at trilio io>
+#
+
+# Specify environment/auth details - username/pass (in a vault specified on cli)
+# Username/Pass
+# Note: 'openshift' assumes kubectl and oc tools installed
+k8s_distro: openshift # kubernetes | openshift
+k8s_auth_type: password # password | kubeconfig
+# Kubeconfig
+kubeconfig: # path to kubeconfig file if kube_auth_type is 'kubeconfig'
+
+# Always authenticate unless you have a reason to skip this
+tvk_auth: true
+# Performs a check of the license and other prequisites
+tvk_check: true
+# Uses the values in the config file to create a demo app, target, backuppplan, backup and restore.
+# Set this value for first installation test
+tvk_smoketest: true
+
+# Search for suggested NS to backup
+tvk_suggest: true
+# Auto create NS Backup Plan 
+tvk_autoprotect: true
+# List of NS to exclude
+tvk_autoprotect_exclude: ['openshift-storage', 'openshift-operators']
+
+# app yaml to deploy
+tvk_deploy_demo_app: true
+tvk_scc_policy_anyuid_to_ns: true
+tvk_create_namespace: true
+tvk_namespace: smoketest1
+tvk_demo_app_yaml: files/demo-mysql-app.yaml
+
+# Specify whether to auto clean the deployment/objects after smoketest
+# 
+# WARNING: THIS DELETES 
+# - ALL BACKUPS IN tvk_namespace and tvk_restore_namespace
+# - ALL DEPLOYMENTS in tvk_namespace and tvk_restore_namespace
+# - THE NAMESPACE tvk_namespace and tvk_restore_namespace
+#
+tvk_cleanup: true
+
+#
+# Backup Target
+#
+# Currently assumes AWS S3
+# IMPORTANT: See templates/target.yaml.j2 to modify for other targets
+# TODO: Specify NFS or S3
+tvk_create_target: true
+tvk_target_type: S3
+tvk_target_name: smoketest-target
+tvk_s3_bucket_name: tvk-migration-demo1
+tvk_secret_name: s3-access-secret
+tvk_enable_browsing: false
+
+#
+# Backup Plan Details
+# Note this must be relevant to the test/demo app
+#
+tvk_create_backupplan: true
+tvk_backupplan_name: smoketest-app-backupplan
+tvk_backupplan_type: ns # ns|label
+tvk_backup_match_label: "app: k8s-demo-app" # ignored for ns backup type
+
+#
+# Perform Backup
+tvk_create_backup: true
+tvk_backup_prefix: "{{ tvk_backupplan_name }}"
+tvk_backup_type: Full # Full | Incremental
+tvk_backup_polling_retries: 10
+tvk_backup_polling_every_seconds: 60
+
+# Perform Restore (to new ns)
+tvk_create_restore: true
+tvk_restore_namespace: smoketest-restore
+tvk_restore_polling_retries: 10
+tvk_restore_polling_every_seconds: 60
+
+# Used for migration/DR smoketest
+tvk_migrate: true
+tvk_backupplan_skip_images: true
+tvk_migrate_namespace: migration-restore
+tvk_migrate_backupplan: "{{ tvk_backupplan_name }}" # if specified, uses last known backup
+tvk_location_id: # can specify which backup to restore to if known

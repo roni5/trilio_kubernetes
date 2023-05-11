@@ -1,0 +1,23 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  name: {{ tvk_backupplan_name }}
+spec:
+  backupNamespace: {{ tvk_namespace }}
+  backupConfig:
+    target:
+      name: {{ tvk_target_name }}
+  backupPlanFlags:
+    skipImageBackup: {{ tvk_backupplan_skip_images }}
+  excludeResources:
+    gvkSelector:
+      - groupVersionKind:
+          group: "packages.operators.coreos.com"
+          kind: "PackageManifest"
+          version: "v1"
+  {% if tvk_backupplan_type == 'label' %}
+  backupPlanComponents:
+    custom:
+      - matchLabels:
+          {{ tvk_backup_match_label }}
+  {% endif %}

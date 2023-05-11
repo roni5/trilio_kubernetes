@@ -1,0 +1,12 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  name: {{ tvk_backup_prefix }}-migration-restore
+spec:
+  source:
+    type: Location
+    location: {% for item in location %}{{ item }}{% endfor %} 
+    target:
+      name: {{ tvk_target_name }}
+      namespace: {{ tvk_migrate_namespace }}
+  skipIfAlreadyExists: true

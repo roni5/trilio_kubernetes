@@ -1,0 +1,15 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  name: {{ tvk_target_name }}
+spec:
+  type: ObjectStore
+  vendor: AWS
+  objectStoreCredentials:
+    credentialSecret:
+      name: {{ tvk_secret_name }}
+      namespace: {{ tvk_namespace }}
+    bucketName: "{{ tvk_s3_bucket_name }}"
+    region: "us-east-1"
+  thresholdCapacity: 100Gi
+  enableBrowsing: {{ tvk_enable_browsing }}

@@ -1,0 +1,35 @@
+# This playbook will allow you to perform various actions
+# of Trilio for Kubernetes, depending on the tags and vars used
+#
+# - authentication using user/pass or kubectl: --tags "auth"
+# - check for kubectl and oc (if openshift): --tags "check"
+# - create a namespace: --tags "namespace"
+# - create the demo app in the namespace specified: --tags "deploy"
+# - create a target as specified: --tags "target"
+# - create a backupplan as specified: --tags "backupplan"
+# - perform a backup: --tags "backup"
+# - restore application to a newly created ns: --tags "restore"
+#
+# A combination of the above can be used
+# e.g. --tags "auth,check,namespace,target,backupplan"
+#
+# Specifying no tags will run through the configuration in tvk-config.yaml
+# executing backups and creating targets as specified, etc.
+#
+# Deployment Test: Smoketest
+# - perform a smoketest of all actions backup/recovery of a demo app with checks of the environment
+
+####################### CONFIGURATION ########################
+# Configuration of the environment and Trilio for Kubernetes
+#                   See tvk-config.yaml
+##############################################################
+#
+
+- name: Trilio for Kubernetes Ansible Utility
+  hosts: localhost
+  module_defaults:
+    group/k8s:
+      host: "{{ k8s_auth_api }}"
+  vars_files: tvk-config.yaml
+  roles:
+    - trilio-kubernetes

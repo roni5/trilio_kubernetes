@@ -1,0 +1,136 @@
+# Set of tasks for migrating an app using Trilio for Kubernetes from one cluster
+# to another using the location based restore option
+#
+# Authors: Kevin Jackson <kevin.jackson at trilio io>
+
+- name: Perform Migration
+  tags: ['migrate']
+  block:
+  - name: Get last backup created for {{ tvk_backupplan_name }} in {{ tvk_namespace }} (kubeconfig)
+    shell: >
+      kubectl get backups -n {{ tvk_namespace }} | awk '/{{ tvk_backupplan_name }}/ {print $1;exit;}'
+    environment:
+      KUBECONFIG: "{{ kubeconfig }}"
+    register: backups
+    when:
+    - k8s_auth_type == "kubeconfig"
+
+  - name: Get last backup created for {{ tvk_backupplan_name }} in {{ tvk_namespace }} (token)
+    shell: |
+      oc login "{{ k8s_auth_api }}" --token="{{ openshift_auth_results.openshift_auth.api_key }}" --insecure-skip-tls-verify=true 2>&/dev/null
+      oc get backups -n {{ tvk_namespace }} | awk '/{{ tvk_backupplan_name }}/ {print $1;exit;}'
+    register: backups
+    when:
+    - k8s_auth_type == "password"
+    - k8s_distro == "openshift"
+
+  - debug:
+      var: backups.stdout_lines
+
+  - name: Fetch details of backup {{ backups.stdout }} (kubeconfig)
+    shell: >
+      kubectl describe backup {{ backups.stdout }} -n {{ tvk_namespace }}
+    environment:
+      KUBECONFIG: "{{ kubeconfig }}"
+    register: backup_describe
+    when:
+    - k8s_auth_type == "kubeconfig"
+
+  - name: Fetch details of backup {{ backups.stdout }} (token)
+    shell: |
+      oc login "{{ k8s_auth_api }}" --token="{{ openshift_auth_results.openshift_auth.api_key }}" --insecure-skip-tls-verify=true 2>&/dev/null
+      oc describe backup {{ backups.stdout }} -n {{ tvk_namespace }}
+    register: backup_describe
+    when:
+    - k8s_auth_type == "password"
+    - k8s_distro == "openshift"
+
+  - name: Identify unique location id
+    set_fact:
+      location: "{{backup_describe.stdout | regex_search(regexp,'\\1') }}"
+    vars:
+      regexp: 'Location:\s*(.+)\s'
+
+  - debug:
+      var: location
+
+  - name: Configure the migration restore of {{ tvk_backupplan_name }} to {{ tvk_migrate_namespace }} namespace
+    template:
+      src: templates/restore-location.yaml.j2
+      dest: /tmp/restore-location.yaml
+
+  - name: Log out source cluster
+    when: k8s_auth_results.k8s_auth.api_key is defined
+    k8s_auth:
+      state: absent
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      host: "{{ k8s_auth_api }}"
+      validate_certs: false
+
+  - name: Auth to second cluster
+    # The following is exectued against the migration destination cluster
+    # Auth
+    ansible.builtin.include_tasks: tvk_auth.yaml
+    vars:
+      tvk_namespace: "{{ tvk_migrate_namespace }}"
+      username: "{{ k8s_migrate_username }}"
+      password: "{{ k8s_migrate_password }}"
+      host: "{{ k8s_migrate_auth_api }}"
+
+  - name: Create Migrate Namespace on second cluster
+    ansible.builtin.include_tasks: tvk_create_ns.yaml
+    vars:
+      tvk_namespace: "{{ tvk_migrate_namespace }}"
+      k8s_username: "{{ k8s_migrate_username }}"
+      k8s_password: "{{ k8s_migrate_password }}"
+      k8s_auth_api: "{{ k8s_migrate_auth_api }}"
+
+  - name: Add Target to second cluster
+    ansible.builtin.include_tasks: tvk_create_target.yaml
+    vars:
+      tvk_namespace: "{{ tvk_migrate_namespace }}"
+      k8s_username: "{{ k8s_migrate_username }}"
+      k8s_password: "{{ k8s_migrate_password }}"
+      k8s_auth_api: "{{ k8s_migrate_auth_api }}"
+
+  # # Execute the specified backup restore in specifed namespace
+  #- name: Execute the migration of {{ tvk_backupplan_name }}
+  #  kubernetes.core.k8s:
+  #    api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+  #    kind: Restore
+  #    state: present # State=present when you need to create new object
+  #    namespace: "{{ tvk_migrate_namespace }}" # defining the namespace
+  #    src: "/tmp/restore-location.yaml"
+  #    validate_certs: false
+  #  register: restore
+
+#  - name: Execute the remote recovery of {{ backupplan_name }} to {{ dr_restored_namespace }} namespace
+#    k8s:
+#      kubeconfig: "{{ dr_kubeconfig }}"
+#      state: present
+#      namespace: "{{ dr_restored_namespace }}"
+#      src: /tmp/restore-location.yaml
+
+#  - name: Wait for remote restore to complete
+#    shell: >
+#      kubectl get restores -n {{ dr_restored_namespace }}
+#    environment:
+#      KUBECONFIG: "{{ dr_kubeconfig }}"
+#    register: restore_available
+#    retries: 20
+#    delay: 30
+#    until: restore_available.stdout.find("Completed") != -1
+
+#  - debug:
+#      var: restore_available.stdout_lines
+
+#  - name: Recovered Application Deployment in {{ dr_restored_namespace }} on remote cluster
+#    shell: >
+#      kubectl get po,pvc,svc -n {{ dr_restored_namespace }}
+#    environment:
+#      KUBECONFIG: "{{ dr_kubeconfig }}"
+#    register: deployment_output
+
+#  - debug:
+#      var: deployment_output.stdout_lines
+

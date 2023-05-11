@@ -1,0 +1,9 @@
+# Set of tasks for creating a Trilio for Kubernetes Backup Plan in a namespace
+# for describing what and where to backup
+#
+# Authors: Kevin Jackson <kevin.jackson at trilio io>
+
+- name: Create Backup Plan
+  ansible.builtin.include_tasks: "tvk_create_backupplan_{{ k8s_auth_type }}.yaml"
+  when: tvk_create_backupplan | bool
+  tags: ['backupplan', 'smoketest']

@@ -1,0 +1,34 @@
+# Set of tasks for creating a Trilio for Kubernetes Target in a namespace
+# for storing backups
+#
+# Authors: Kevin Jackson <kevin.jackson at trilio io>
+
+- name: Basic Trilio for Kubernetes Checks
+  ansible.builtin.include_tasks: tvk_check.yaml
+  when: tvk_check | bool
+  tags: ['smoketest']
+
+- name: Trilio for Kubernetes Deploy App
+  ansible.builtin.include_tasks: tvk_deploy_app.yaml
+  when: tvk_deploy_demo_app | bool
+  tags: ['smoketest']
+
+- name: Trilio for Kubernetes Create Target
+  ansible.builtin.include_tasks: tvk_create_target.yaml
+  when: tvk_create_target | bool
+  tags: ['smoketest']
+
+- name: Trilio for Kubernetes Create Backup Plan
+  ansible.builtin.include_tasks: tvk_create_backupplan.yaml
+  when: tvk_create_target | bool
+  tags: ['smoketest']
+
+- name: Trilio for Kubernetes Execute a Backup
+  ansible.builtin.include_tasks: tvk_create_backup.yaml
+  when: tvk_create_backup | bool
+  tags: ['smoketest']
+
+- name: Trilio for Kubernetes Perform Restore
+  ansible.builtin.include_tasks: tvk_create_restore.yaml
+  when: tvk_create_restore | bool
+  tags: ['smoketest']

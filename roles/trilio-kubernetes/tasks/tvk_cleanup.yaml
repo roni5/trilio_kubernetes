@@ -1,0 +1,65 @@
+# Set of tasks for cleaning up after a smoketest run
+# Can also be used to clean up various TVK objects
+#
+# Authors: Kevin Jackson <kevin.jackson at trilio io>
+
+- name: Execute Cleanup Tasks
+  tags: ['cleanup', 'smoketest']
+  block:
+  - name: Collecting all Deployments from {{ tvk_namespace }}
+    kubernetes.core.k8s_info:
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      kind: Deployment
+      namespace: "{{ tvk_namespace }}"
+      validate_certs: false
+    register: deployment_list
+
+  - name: Removing all Deployments from {{ tvk_namespace }}
+    kubernetes.core.k8s:
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      state: absent
+      namespace: "{{ tvk_namespace }}"
+      validate_certs: false
+      kind: Deployment
+      name: "{{ item }}"
+      wait: true
+    register: cleanup_deployment
+    with_items: "{{ deployment_list | json_query('resources[*].metadata.name') }}"
+
+  - name: Collecting all Backups created in {{ tvk_namespace }}
+    kubernetes.core.k8s_info:
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      api_version: triliovault.trilio.io/v1
+      kind: Backup
+      namespace: "{{ tvk_namespace }}"
+      validate_certs: false
+    register: backup_list
+
+  - name: List of Backups that will be removed
+    debug:
+      msg: "backup_list: {{ backup_list | json_query('resources[*].metadata.name')  }} "
+
+  - name: Removing all Backups from {{ tvk_namespace }}
+    kubernetes.core.k8s:
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      api_version: triliovault.trilio.io/v1
+      state: absent
+      namespace: "{{ tvk_namespace }}"
+      validate_certs: false
+      kind: Backup
+      name: "{{ item }}"
+      wait: true
+    register: cleanup_backups
+    with_items: "{{ backup_list | json_query('resources[*].metadata.name') }}"
+
+  - name: Remove {{ tvk_namespace }} namespace
+    kubernetes.core.k8s:
+      name: "{{ tvk_namespace }}"
+      api_version: v1
+      api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      kind: Namespace
+      validate_certs: false
+      state: absent
+
+  when:
+  - tvk_cleanup | bool

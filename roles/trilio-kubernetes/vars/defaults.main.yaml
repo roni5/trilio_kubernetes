@@ -1,0 +1,5 @@
+tvk_auth: true
+tvk_check: true
+tvk_smoketest: false
+tvk_create_target: false
+tvk_deploy_demo_app: false

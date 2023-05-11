@@ -1,0 +1,9 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  name: {{ tvk_backup_prefix }}-{{ ansible_date_time.date }}-{{ ansible_date_time.epoch }}
+spec:
+  type: {{ tvk_backup_type }}
+  backupPlan:
+    name: {{ tvk_backupplan_name }}
+    namespace: {{ tvk_namespace }}

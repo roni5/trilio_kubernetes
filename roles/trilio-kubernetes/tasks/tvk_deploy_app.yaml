@@ -1,0 +1,44 @@
+# Set of tasks for deploying an app from a YAML source file
+# to a namespace specifed
+#
+# Authors: Kevin Jackson <kevin.jackson at trilio io>
+
+- name: Create Namespace
+  ansible.builtin.include_tasks: tvk_create_ns.yaml
+  tags: ['namespace', 'smoketest', 'deploy_app']
+
+- name: Deploy Application
+  tags: ['deploy_app', 'smoketest']
+  block:
+  - name: Create App in {{ tvk_namespace }}
+    kubernetes.core.k8s:
+      # api_key: "{{ k8s_auth_results.k8s_auth.api_key }}"
+      state: present # State=present when you need to create new object
+      namespace: "{{ tvk_namespace }}" # namespace for the secret
+      validate_certs: false
+      src: "{{ tvk_demo_app_yaml }}"
+      wait: true
+    register: app_deployment
+
+  # TODO: if not using kubeconfig auth, how to do kubectl?
+  - name: Application Deployment in the {{ tvk_namespace }} namespace (kubeconfig)
+    shell: >
+      kubectl get po,pvc,svc -n {{ tvk_namespace }}
+    environment:
+      KUBECONFIG: "{{ kubeconfig }}"
+    register: deployment_available
+    ignore_errors: true
+    when:
+    - k8s_auth_type == "kubeconfig"
+
+  - name: Application Deployment in the {{ tvk_namespace }} namespace (token)
+    shell: |
+      oc login "{{ k8s_auth_api }}" --token="{{ openshift_auth_results.openshift_auth.api_key }}" --insecure-skip-tls-verify=true
+      oc get po,pvc,svc -n {{ tvk_namespace }}
+    register: deployment_available
+    ignore_errors: true
+    when:
+    - k8s_auth_type == "password"
+    - k8s_distro == "openshift"
+  - debug: var=deployment_available.stdout_lines
+  when: tvk_deploy_demo_app | bool

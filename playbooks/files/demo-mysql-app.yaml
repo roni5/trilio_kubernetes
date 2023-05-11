@@ -1,0 +1,127 @@
+## Secret for mysql password
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-pass
+  labels:
+    app: k8s-demo-app
+    tier: mysql
+type: Opaque
+data:
+  password: dHJpbGlvcGFzcw==
+## password base64 encoded, plain text: triliopass
+---
+## PVC for mysql PV
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+    app: k8s-demo-app
+    tier: mysql
+spec:
+ #storageClassName: "csi-hostpath-delete-sc"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+## Mysql app deployment
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: k8s-demo-app-mysql
+  labels:
+    app: k8s-demo-app
+    tier: mysql
+spec:
+  selector:
+    matchLabels:
+      app: k8s-demo-app
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: k8s-demo-app
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+---
+## Service for mysql app
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-demo-app-mysql
+  labels:
+    app: k8s-demo-app
+    tier: mysql
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: k8s-demo-app
+    tier: mysql
+---
+## Deployment for frontend webserver
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-demo-app-frontend
+  labels:
+    app: k8s-demo-app
+    tier: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: k8s-demo-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: k8s-demo-app
+        tier: frontend
+    spec:
+      containers:
+      - name: demoapp-frontend
+        image: docker.io/trilio/k8s-demo-app:v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+---
+## Service for frontend
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-demo-app-frontend
+  labels:
+    app: k8s-demo-app
+    tier: frontend
+spec:
+  ports:
+  - name: web
+    port: 80
+  selector:
+    app: k8s-demo-app
+    tier: frontend
